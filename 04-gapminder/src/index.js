@@ -1,196 +1,225 @@
 import * as d3 from 'd3'
-import { max } from 'd3'
+import { timeInterval } from 'd3'
+import { count } from 'd3';
 
 // Pour importer les données
-// import file from '../data/data.csv'
-import incomeData from '../data/income_per_person_gdppercapita_ppp_inflation_adjusted.csv'
-import lifeData from '../data/life_expectancy_years.csv'
-import populationData from '../data/population_total.csv'
+import gdp from '../data/income_per_person_gdppercapita_ppp_inflation_adjusted.csv'
+import lifeExpectancy from '../data/life_expectancy_years.csv'
+import population from '../data/population_total.csv'
 
+// Histoire de capter comment les bdd sont construites…
+// let xy = 21;
+// console.log(gdp);
+// console.log(gdp[0][`20${xy}`]);
+// console.log(lifeExpectancy[0]['2021']);
+// console.log(population[0]['2021']);
 
-// Récupère toutes les années
-const annees = Object.keys(populationData[0])
-// console.log(annees)
+// **************************************
+// EXERCICE 1
 
-let converterSI = (array, variable, variableName) => {
+// d3.select("body")
+//     .append("div")
+//     .attr('id', 'graph')
 
-    let convertedVariable = array.map(d => {
-        // Trouver le format SI (M, B, k)
-        let SI = typeof d[variable.toString()] === 'string' || d[variable.toString()] instanceof String ? d[variable.toString()].slice(-1) : d[variable.toString()];
-        // Extraire la partie numérique
-        let number = typeof d[variable.toString()] === 'string' || d[variable.toString()] instanceof String ? parseFloat(d[variable.toString()].slice(0, -1)) : d[variable.toString()];
-        // Selon la valeur SI, multiplier par la puissance
-        switch (SI) {
-            case 'M': {
-                return { "country": d.country, [variableName]: Math.pow(10, 6) * number };
-                break;
-            }
-            case 'B': {
-                return { "country": d.country, [variableName]: Math.pow(10, 9) * number };
-                break;
-            }
-            case 'k': {
-                return { "country": d.country, [variableName]: Math.pow(10, 3) * number };
-                break;
-            }
-            default: {
-                return { "country": d.country, [variableName]: number };
-                break;
-            }
-        }
-    })
-    return convertedVariable;
-};
+// let margin = { top: 10, right: 20, bottom: 30, left: 50 },
+//     width = 1000 - margin.left - margin.right,
+//     height = 600 - margin.top - margin.bottom;
 
+// let svg = d3.select("#graph")
+//     .append("svg")
+//     .attr("width", width + margin.left + margin.right)
+//     .attr("height", height + margin.top + margin.bottom)
+//     .append("g")
+//     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-let pop = [],
-    income = [],
-    life = [],
-    dataCombined = [];
+// // Générer une taille d'axe X cohérente
+// let theBiggestGDP = 0;
+// gdp.forEach(pays => {
+//     let gdpAnneeCourante = pays['2021'];
+//     if (typeof gdpAnneeCourante === 'string') {
+//         gdpAnneeCourante = strToInt(pays['2021']);
+//     }
+//     pays['2021'] = gdpAnneeCourante;
 
-// Merge data
-const mergeByCountry = (a1, a2, a3) => {
-    let data = [];
-    a1.map(itm => {
-        let newObject = {
-            ...a2.find((item) => (item.country === itm.country) && item),
-            ...a3.find((item) => (item.country === itm.country) && item),
-            ...itm
-        }
-        data.push(newObject);
-    })
-    return data;
-}
+//     // Générer une taille d'axe X cohérente
+//     if (pays['2021'] >= theBiggestGDP) {
+//         theBiggestGDP = pays['2021'];
+//     }
+// });
 
-annees.forEach(annee => {
-    pop.push({ "annee": annee, "data": converterSI(populationData, annee, "pop") })
-    income.push({ "annee": annee, "data": converterSI(incomeData, annee, "income") })
-    life.push({ "annee": annee, "data": converterSI(lifeData, annee, "life") })
-    const popAnnee = pop.filter(d => d.annee == annee).map(d => d.data)[0];
-    const incomeAnnee = income.filter(d => d.annee == annee).map(d => d.data)[0];
-    const lifeAnnee = life.filter(d => d.annee == annee).map(d => d.data)[0];
-    dataCombined.push({ "annee": annee, "data": mergeByCountry(popAnnee, incomeAnnee, lifeAnnee) })
+// // Add X axis
+// let x = d3.scaleLinear()
+//     .domain([0, theBiggestGDP * 1.05])
+//     .range([0, width]);
+// svg.append("g")
+//     .attr("transform", "translate(0," + height + ")")
+//     .call(d3.axisBottom(x));
+
+// // Générer une taille d'axe Y cohérente
+// let theBiggestLifeExp = 0;
+// let theSmallestLifeExp = 0;
+// console.log(lifeExpectancy);
+// lifeExpectancy.forEach(pays => {
+//     if (pays['2021'] >= theBiggestLifeExp) {
+//         theBiggestLifeExp = pays['2021'];
+//     }
+//     theSmallestLifeExp = theBiggestLifeExp;
+//     if (pays['2021'] <= theSmallestLifeExp) {
+//         theSmallestLifeExp = pays['2021'];
+//     }
+//     if (pays['2021'] === null && pays['2020'] !== null) {
+//         pays['2021'] = pays['2020'];
+//     } else if (pays['2021'] === null && pays['2020'] === null) {
+//         pays['2021'] = pays['2019'];
+//     }
+// })
+
+// // Add Y axis
+// let y = d3.scalePow()
+//     .exponent(1.5)
+//     .domain([0, theBiggestLifeExp * 1.1])
+//     .range([height, 0]);
+// svg.append("g")
+//     .call(d3.axisLeft(y));
+
+// population.forEach(pays => {
+//     let popAnneeCourante = pays['2021'];
+//     if (typeof popAnneeCourante === 'string') {
+//         popAnneeCourante = strToInt(pays['2021']);
+//     }
+//     pays['2021'] = popAnneeCourante;
+// });
+
+// // Add a scale for bubble size
+// let z = d3.scaleLinear()
+//     .domain([200000, 1310000000])
+//     .range([5, 60]);
+
+// // Add dots
+// svg.append('g')
+//     .selectAll("dot")
+//     .data(gdp)
+//     .enter()
+//     .append("circle")
+//     .attr("cx", function (d) { return x(d["2021"]); })
+//     .attr("r", 10)
+//     .style("fill", `#${Math.floor(Math.random() * 16777215).toString(16)}`)
+//     .style("opacity", "0.7")
+//     .attr("stroke", "black")
+
+// svg.selectAll("circle").data(lifeExpectancy).join()
+//     .attr("cy", function (d) { return y(d["2021"]); })
+
+// svg.selectAll("circle").data(population).join()
+//     .attr("r", function (d) { return z(d["2021"]); })
+
+// function strToInt(nb) {
+//     let multi;
+//     let number
+//     if (nb.slice(-1) === 'k') {
+//         multi = 1000;
+//         // console.log(gdpAnneeCourante + " ; c'est un k");
+//         number = nb.split('k')[0];
+//     } else if (nb.slice(-1) === 'M') {
+//         multi = 1000000;
+//         // console.log("c'est un M");
+//         number = nb.split('M')[0];
+//     } else if (nb.slice(-1) === 'B') {
+//         multi = 1000000000;
+//         // console.log("c'est un M");
+//         number = nb.split('B')[0];
+//     } else {
+//         // console.log('ça beug');
+//     }
+//     number = parseInt(number * multi);
+//     return number;
+// };
+
+// **************************************
+// EXERCICE 2
+
+let listCountries = []
+
+lifeExpectancy.forEach(row => {
+    let countryData = {};
+    countryData[row['country']] = row['2021']
+    listCountries.push(countryData)
 });
-// console.log(dataCombined)
+console.log(listCountries);
 
-let allIcome2021 = []
-dataCombined.forEach(annee => {
-    if (annee.annee == '2021') {
-        annee.data.forEach(pays => {
-            allIcome2021.push({ 'country': pays.country, 'income': pays.income })
-        })
-    }
-})
-console.log(allIcome2021);
-let allLife2021 = []
-dataCombined.forEach(annee => {
-    if (annee.annee == '2021') {
-        annee.data.forEach(pays => {
-            allLife2021.push({ 'country': pays.country, 'life': pays.life })
-        })
-    }
-})
-console.log(allLife2021);
-let allPopulation2021 = []
-dataCombined.forEach(annee => {
-    if (annee.annee == '2021') {
-        annee.data.forEach(pays => {
-            allPopulation2021.push({ 'country': pays.country, 'pop': pays.pop })
-        })
-    }
-})
-console.log(allPopulation2021);
+d3.select("body")
+    .append("div")
+    .attr('id', 'graph')
 
-let maxIcome = 0
-allIcome2021.forEach(pays => {
-    if (pays.income > maxIcome) {
-        maxIcome = pays.income
-    }
-})
-console.log('max income : ' + maxIcome);
-
-let maxLife = 0
-allLife2021.forEach(pays => {
-    if (pays.life > maxLife) {
-        maxLife = pays.life
-    }
-})
-console.log('max life : ' + maxLife);
-
-let minPop = 1000000000000000
-allPopulation2021.forEach(pays => {
-    if (pays.pop < minPop) {
-        minPop = pays.pop
-    }
-})
-console.log('min pop : ' + minPop);
-
-let maxPop = 0
-allPopulation2021.forEach(pays => {
-    if (pays.pop > maxPop) {
-        maxPop = pays.pop
-    }
-})
-console.log('max pop : ' + maxPop);
-
-
-
-
-// Dimension du graph
-let margin = { top: 20, right: 20, bottom: 30, left: 40 },
-    width = 960 - margin.left - margin.right,
+let margin = { top: 20, right: 20, bottom: 30, left: 50 },
+    width = 650 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
 
-// Echelles
-let x = d3.scaleLinear()
-    .domain([0, maxIcome])
-    .range([0, width])
-    .nice()
-
-let y = d3.scalePow()
-    .exponent(1.7)
-    .domain([0, maxLife])
-    .range([height, 0])
-    .nice()
-
-let ronds = d3.scaleSqrt()
-    .domain([minPop, maxPop])
-    .range([5, 20]);
-
-
-// Affichage grille
-let svg = d3.select("#graphique")
+let svg = d3.select("#graph")
     .append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
 
-//Ajouter les cercles
-svg.append('g')
-    .selectAll("dot")
-    .data(allIcome2021)
-    .enter()
-    .append("circle")
-    .attr("cx", function (d) { return x(d.income) })
-    .data(allLife2021)
-    .join()
-    .attr("cy", function (d) { return y(d.life)})
-    .data(allPopulation2021)
-    .join()
-    .attr("r", function (d) { return ronds(d.pop) })
-    .style("fill", "red")
-    .attr("opacity", "0.7")
-    .attr("stroke", "black")
+let projection = d3.geoMercator()
+    .scale(70)
+    .center([0, 20])
+    .translate([width / 2, height / 2]);
+
+let aRandomNb = Math.floor(Math.random() * 6);
+let aRandomScheme;
+switch (aRandomNb) {
+    case 0:
+        aRandomScheme = d3.schemeOranges;
+        break;
+    case 1:
+        aRandomScheme = d3.schemeGreens;
+        break;
+    case 2:
+        aRandomScheme = d3.schemeReds;
+        break;
+    case 3:
+        aRandomScheme = d3.schemeBlues;
+        break;
+    case 4:
+        aRandomScheme = d3.schemeGreys;
+        break;
+    case 5:
+        aRandomScheme = d3.schemePurples;
+        break;
+}
 
 
-// Add x axis
-svg.append("g")
-    .attr("transform", "translate(0," + height + ")")
-    .call(d3.axisBottom(x));
+let colorScale = d3.scaleThreshold()
+    .domain([50, 60, 70, 80, 90, 100])
+    .range(aRandomScheme[7]);
 
-// Add y axis
-svg.append("g")
-    .call(d3.axisLeft(y));
+d3.json("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson").then(function (d) {
+    // Draw the map
+    svg.append("g")
+        .selectAll("path")
+        .data(d.features)
+        .join("path")
+        // draw each country
+        .attr("d", d3.geoPath()
+            .projection(projection)
+        )
+        // set id
+        .attr("id", function (d) { return d.properties.name; })
+        .attr("fill", function (d) {
+            let number = 0;
+            listCountries.forEach(country => {
+                if (typeof country[this.id] != "undefined") {
+                    console.log(country[this.id]);
+                    number = country[this.id]
+                }
+            })
+            console.log(number);
+            return colorScale(number);
+        })
+})
 
-
+// **************************************
+// EXERCICE 3
+// import gdp from '../data/income_per_person_gdppercapita_ppp_inflation_adjusted.csv'
+// import lifeExpectancy from '../data/life_expectancy_years.csv'
+// import population from '../data/population_total.csv'
